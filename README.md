@@ -15,7 +15,7 @@ Please Do This ...
 <br />
 4) Config your RemoteDecoderConfig.h
 <br />
-5) Add RemoteDecoder_CallBack315() or RemoteDecoder_CallBack433 or both on external interrupt routin.
+5) Add RemoteDecoder_CallBack315() or RemoteDecoder_CallBack433() or both on external interrupt routin.
 <br />
 6) Call  RemoteDecoder_Init() on your app.
 <br />
