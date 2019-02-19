@@ -27,11 +27,10 @@ Example:
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void const * argument)
 {
-
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
-		osDelay(100);
-	 RemoteDecoder_Init(osPriorityRealtime);
+  osDelay(100);
+  RemoteDecoder_Init(osPriorityRealtime);
   for(;;)
   {	  
     osDelay(1);
