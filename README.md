@@ -1,4 +1,4 @@
-# Stm32 Remote decoder (EV1527 and PT2264 and ...)
+# Stm32 Remote decoder (EV1527,PT2262,PT2264 and ...)
 <br />
 I hope use it and enjoy.
 <br />
