@@ -1,13 +1,13 @@
-# Stm32 Remote decoder (EV1527 and PT2264)
+# Stm32 Remote decoder (EV1527 and PT2264 and ...)
 <br />
 I hope use it and enjoy.
 <br />
-I use Stm32f103C8 and Keil Compiler and Stm32CubeMX wizard.
+I use Stm32f03k6 and Keil Compiler and Stm32CubeMX wizard.
  <br />
 Please Do This ...
 <br />
 <br />
-1) Enable a Timer with 1 us tick.  
+1) Enable a Timer with 10 us tick.  
 <br />
 2) enable Interrupt pin on rising and falling edge.
 <br />
@@ -15,8 +15,25 @@ Please Do This ...
 <br />
 4) Config your RemoteDecoderConfig.h
 <br />
-5) Add RemoteDecoder_CallBack315() or RemoteDecoder_CallBack433() or both on external interrupt routin.
+5) Add RemoteDetector_PinChangeCallBack() on external interrupt routin.
 <br />
 6) Call  RemoteDecoder_Init() on your app.
 <br />
-7) Call RemoteDecoder_Process() in a loop.
+<br />
+#Example
+```
+/* USER CODE END Header_StartDefaultTask */
+void StartDefaultTask(void const * argument)
+{
+
+  /* USER CODE BEGIN StartDefaultTask */
+  /* Infinite loop */
+		osDelay(100);
+	 RemoteDecoder_Init(osPriorityRealtime);
+  for(;;)
+  {	  
+    osDelay(1);
+  }
+  /* USER CODE END StartDefaultTask */
+}
+```
