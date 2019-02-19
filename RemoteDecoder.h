@@ -1,61 +1,31 @@
-#ifndef _REMOTEDECODER_H
-#define _REMOTEDECODER_H
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "remotedecoderConfig.h"
+#ifndef _REMOTE_DECODER_H
+#define _REMOTE_DECODER_H
+
+#include "main.h"
+#include "cmsis_os.h"
 #include "tim.h"
-
-//##########################################################################################
-typedef enum
-{
-  RemoteDecoder_Protocol_Error,
-  RemoteDecoder_Protocol_EV1527,
-  RemoteDecoder_Protocol_PT226X,  
-  
-}RemoteDecoder_Protocol_t;
-//##########################################################################################
-typedef enum
-{
-  RemoteDecoder_BitValue_Error = 'E', 
-  RemoteDecoder_BitValue_Zero = '0',
-  RemoteDecoder_BitValue_One = '1',
-  RemoteDecoder_BitValue_Float = 'F',
-  
-}RemoteDecoder_BitValue_t;
-//##########################################################################################
+#include "gpio.h"
+#include <stdbool.h>
+#include "RemoteDecoderConfig.h"
+//##############################################################################################################
 typedef struct
 {
-  uint16_t                  Buffer[_REMOTE_DECODER_BUFFER_SIZE];
-  uint16_t                  BufferProcess[_REMOTE_DECODER_BUFFER_SIZE];
-  RemoteDecoder_BitValue_t  Code[20];
-  uint8_t                   Channel;
-  RemoteDecoder_Protocol_t  Protocol;
-  
-  uint32_t                  StartFrameTime;
-  uint16_t                  PinChangeLastTime;  
-  uint16_t                  SyncTime;
-  uint16_t                  PinChangeCounter;
-  uint16_t                  BitTime;
-  
-  uint8_t                   StartFrame;                   
-  uint8_t                   EndFrame;
-  
+	uint8_t		AllowToGetNewSample;
+	uint8_t		Index;
+	uint8_t 	Buff[_REMOTE_DECODER_BUFFER_SIZE];
+	uint8_t 	DecodedData[2][16];
+	uint8_t 	DecodedDataLen[2];
+	uint16_t	LastPinChangeInTimer;
+	uint32_t	LastPinChangeInSystick;
+	
 }RemoteDecoder_t;
-//##########################################################################################
-#if (_REMOTE_DECODER_ENABLE_315==1)
-extern RemoteDecoder_t  RemoteDecoder_315;
-void  RemoteDecoder_CallBack315(void);
-void  RemoteDecoder_UserGetData315(char *Code,uint8_t Channel,RemoteDecoder_Protocol_t Protocol);
-#endif
-//##########################################################################################
-#if (_REMOTE_DECODER_ENABLE_433==1)
-extern RemoteDecoder_t  RemoteDecoder_433;
-void  RemoteDecoder_CallBack433(void);
-void  RemoteDecoder_UserGetData433(char *Code,uint8_t Channel,RemoteDecoder_Protocol_t Protocol);
-#endif
-//##########################################################################################
-void  RemoteDecoder_Init(void);
-void  RemoteDecoder_Process(void);
-//##########################################################################################
+
+extern RemoteDecoder_t RemoteDecoder;
+//##############################################################################################################
+void	RemoteDetector_PinChangeCallBack(void);
+bool	RemoteDecoder_Init(osPriority Priority);
+void	RemoteDecoder_User_Detect(uint8_t *DecodeInByte,uint8_t DecodeLenInBit,uint8_t *RawBitTimeArray,uint8_t RawBitTimeArrayLen);
+//##############################################################################################################
+
 #endif

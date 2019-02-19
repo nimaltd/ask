@@ -1,21 +1,9 @@
+
 #include "RemoteDecoder.h"
 
-#if (_REMOTE_DECODER_ENABLE_315==1)
-//########################################################################################################
-void  RemoteDecoder_UserGetData315(char *Code,uint8_t Channel,RemoteDecoder_Protocol_t Protocol)
+
+void	RemoteDecoder_User_Detect(uint8_t *DecodeInByte,uint8_t DecodeLenInBit,uint8_t *RawBitTimeArray,uint8_t RawBitTimeArrayLen)
 {
-  
-  
-  
+	HAL_GPIO_TogglePin(LED_GPIO_Port,LED_Pin);	
 }
-//########################################################################################################
-#endif
-#if (_REMOTE_DECODER_ENABLE_433==1)
-//########################################################################################################
-void  RemoteDecoder_UserGetData433(char *Code,uint8_t Channel,RemoteDecoder_Protocol_t Protocol)
-{
 
-
-}  
-//########################################################################################################
-#endif

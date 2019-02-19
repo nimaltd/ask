@@ -1,21 +1,15 @@
-#ifndef _REMOTEDECODERCONFIG_H
-#define _REMOTEDECODERCONFIG_H
+#ifndef _REMOTE_DECODER_CONFIG_H
+#define _REMOTE_DECODER_CONFIG_H
 
-#define   _REMOTE_DECODER_DEBUG                     0
-#define   _REMOTE_DECODER_TIMER                     htim1
 
-#define   _REMOTE_DECODER_START_FRAME_US            4000
-#define   _REMOTE_DECODER_FRAME_TIMEOUT_MS          100
-
-#define   _REMOTE_DECODER_ENABLE_315                1
-#define   _REMOTE_DECODER_ENABLE_433                1
-
-#define   _REMOTE_DECODER_BUFFER_SIZE               100
-
-#define   _REMOTE_DECODER_315_PORT                  IN_315_GPIO_Port
-#define   _REMOTE_DECODER_315_PIN                   IN_315_Pin
-
-#define   _REMOTE_DECODER_433_PORT                  IN_433_GPIO_Port
-#define   _REMOTE_DECODER_433_PIN                   IN_433_Pin
+#define		_REMOTE_DECODER_TIM																												htim17
+#define		_REMOTE_DECODER_TOLERANCE_PERCENT																					7
+#define		_REMOTE_DECODER_BIT_0_DUTY																								33
+#define		_REMOTE_DECODER_BIT_1_DUTY																								83
+#define		_REMOTE_DECODER_MINIMUM_STAY_IN_LOW_STATE_FOR_DETECT_SIGNAL_IN_MS					5
+#define		_REMOTE_DECODER_BUFFER_SIZE																								128
+#define		_REMOTE_DETECTOR_GPIO																											GPIOA
+#define		_REMOTE_DETECTOR_PIN																											GPIO_PIN_11
 
 #endif
+
