@@ -40,7 +40,7 @@ void StartDefaultTask(void const * argument)
 }
 ```
 <br />
-Set IRQ
+Set IRQ:
 <br />
 
 ```
