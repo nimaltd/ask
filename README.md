@@ -7,7 +7,7 @@ I use Stm32f03k6 and Keil Compiler and Stm32CubeMX wizard.
 Please Do This ...
 <br />
 <br />
-1) Enable a Timer with 10 us tick.  
+1) Enable a Timer with 10 us tick. (EX: Set Prescaler to "480-1" for 48MHZ Timer) 
 <br />
 2) enable Interrupt pin on rising and falling edge.
 <br />
