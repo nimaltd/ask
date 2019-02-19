@@ -20,7 +20,7 @@ Please Do This ...
 6) Call  RemoteDecoder_Init() on your app.
 <br />
 <br />
-# Example
+Example
 <br />
 ```
 /* USER CODE END Header_StartDefaultTask */
@@ -39,7 +39,7 @@ void StartDefaultTask(void const * argument)
 }
 ```
 <br />
-# Set IRQ
+Set IRQ
 <br />
 ```
 void EXTI4_15_IRQHandler(void)
