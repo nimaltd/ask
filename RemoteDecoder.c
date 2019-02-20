@@ -94,8 +94,7 @@ void	RemoteDetector_PinChangeCallBack(void)
 }
 //##############################################################################################
 bool RemoteDecoder_Init(osPriority Priority)
-{
-	
+{	
 	osThreadDef(RemoteDecoderTask, StartRemoteDecoderTask, Priority, 0, 128);
   RemoteDecoderTaskHandle = osThreadCreate(osThread(RemoteDecoderTask), NULL);
 	if(RemoteDecoderTaskHandle==NULL)
@@ -103,8 +102,6 @@ bool RemoteDecoder_Init(osPriority Priority)
 	else
 		return true;
 }
-	
-uint32_t mem;
 //##############################################################################################
 void StartRemoteDecoderTask(void const * argument)
 {
@@ -113,7 +110,6 @@ void StartRemoteDecoderTask(void const * argument)
 	HAL_TIM_Base_Start(&_REMOTE_DECODER_TIM);
 	while(1)
 	{		
-		mem = xPortGetFreeHeapSize();
 		if(HAL_GetTick()-RemoteDecoder.LastPinChangeInSystick > _REMOTE_DECODER_MINIMUM_STAY_IN_LOW_STATE_FOR_DETECT_SIGNAL_IN_MS)
 		{			
 			if(HAL_GPIO_ReadPin(_REMOTE_DETECTOR_GPIO,_REMOTE_DETECTOR_PIN)==GPIO_PIN_RESET)

@@ -12,9 +12,9 @@
 typedef struct
 {
 	uint8_t		AllowToGetNewSample;
-	uint8_t		Index;
+	uint16_t	Index;
 	uint8_t 	Buff[_REMOTE_DECODER_BUFFER_SIZE];
-	uint8_t 	DecodedData[2][16];
+	uint8_t 	DecodedData[2][8];
 	uint8_t 	DecodedDataLen[2];
 	uint16_t	LastPinChangeInTimer;
 	uint32_t	LastPinChangeInSystick;
