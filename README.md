@@ -13,7 +13,7 @@ How to use this Library:
 * Include Header and source into your project.   
 * Config your RemoteDecoderConf.h
 * Create a struct(EX: RemoteDecoder_t rf).
-* Add RemoteDetector_callBack(&rf) on external interrupt routin.
+* Add RemoteDecoder_callBack(&rf) on external interrupt routin.
 * RemoteDecoder_init(&rf,GPIO,PIN) on your app.
 * Put RemoteDecoder_loop(&rf) function in your loop.
 * Read data by RemoteDecoder_available(&rf,code,&len,&time);
