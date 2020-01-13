@@ -25,6 +25,7 @@ How to use this Library:
 .
 .
 RemoteDecoder_t	rf;
+uint8_t	code[3];
 .
 .
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
