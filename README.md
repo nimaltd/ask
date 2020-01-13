@@ -9,9 +9,9 @@ This is the ASK RF remote decoder for STM32 HAL Library
 How to use this Library:
 * Select "General peripheral Initalizion as a pair of '.c/.h' file per peripheral" on project settings.   
 * Enable a Timer with 10 us tick. (EX: Set Prescaler to "480-1" for 48MHZ Timer).  
-* enable a GPIO as Interrupt pin on rising and falling edge.
+* Enable a GPIO as Interrupt pin on rising and falling edge.
 * Include Header and source into your project.   
-* Config your RemoteDecoderConf.h
+* Config your "RemoteDecoderConf.h".
 * Create a struct(EX: RemoteDecoder_t rf).
 * Add RemoteDecoder_callBack(&rf) on external interrupt routin.
 * RemoteDecoder_init(&rf,GPIO,PIN) on your app.
