@@ -1,161 +1,123 @@
 
-#include <string.h>
 #include "RemoteDecoder.h"
+#include "tim.h"
+#include <string.h>
 
-osThreadId RemoteDecoderTaskHandle;
-RemoteDecoder_t RemoteDecoder;
-
-void 	StartRemoteDecoderTask(void const * argument);
-//##############################################################################################
-uint8_t	RemoteDecoder_CalcDuty(uint8_t	TimH,uint8_t	TimL)
-{	
-	return (uint8_t)(((float)TimH / (float)(TimH+TimL))*100.0f);	
-}
-//##############################################################################################
-bool	RemoteDecoder_CheckTolerance(uint8_t Data,uint8_t	Refrence)
+  
+//###########################################################################################################
+void RemoteDecoder_init(RemoteDecoder_t *rf, GPIO_TypeDef  *gpio, uint16_t  pin)
 {
-	if((Data<Refrence+_REMOTE_DECODER_TOLERANCE_PERCENT) && (Data>Refrence-_REMOTE_DECODER_TOLERANCE_PERCENT))
-		return true;
-	else
-		return false;
+  if(rf == NULL)
+    return;
+  memset(rf,0,sizeof(RemoteDecoder_t));
+  rf->gpio = gpio;
+  rf->pin = pin; 
+  _REMOTE_DECODER_TIM.Instance->ARR = 0xFFFF;
+  rf->lastPinChangeTimeMs = HAL_GetTick(); 
+  HAL_TIM_Base_Start(&_REMOTE_DECODER_TIM);  
 }
-//##############################################################################################	
-bool	RemoteDecoder_CheckBitLen(uint8_t	TimH,uint8_t	TimL)	// check This Bit len by first bit
+//###########################################################################################################
+void RemoteDecoder_callBack(RemoteDecoder_t *rf)
 {
-	uint16_t FirstBitLen	= RemoteDecoder.Buff[1]+RemoteDecoder.Buff[2];
-	if((TimH+TimL<=FirstBitLen+(FirstBitLen*_REMOTE_DECODER_TOLERANCE_PERCENT/100)) && (TimH+TimL>=FirstBitLen - (FirstBitLen*_REMOTE_DECODER_TOLERANCE_PERCENT/100)))
-		return true;
-	else
-		return false;
+  if(rf == NULL)
+    return;
+  if((rf->newFrame == 1) && (rf->endFrame == 0))
+  {
+    rf->dataRaw[rf->index] = _REMOTE_DECODER_TIM.Instance->CNT - rf->lastCNT;
+    if(rf->index < _REMOTE_DECODER_EDGE)
+      rf->index++;
+    if((HAL_GetTick() - rf->lastPinChangeTimeMs > _REMOTE_DECODER_MINIMUM_STAY_IN_LOW_STATE_TO_DETECT_NEW_FRAME_IN_MS)\
+      && (HAL_GPIO_ReadPin(rf->gpio, rf->pin) == GPIO_PIN_SET))
+    {
+      rf->endFrame = 1;
+      rf->dataRawEnd = _REMOTE_DECODER_TIM.Instance->CNT - rf->lastCNT;
+    }
+  }
+  else if((rf->newFrame == 0) && (HAL_GetTick() - rf->lastPinChangeTimeMs > _REMOTE_DECODER_MINIMUM_STAY_IN_LOW_STATE_TO_DETECT_NEW_FRAME_IN_MS)\
+    && (HAL_GPIO_ReadPin(rf->gpio, rf->pin) == GPIO_PIN_SET))
+  {
+    rf->newFrame = 1;
+    rf->dataRawStart = _REMOTE_DECODER_TIM.Instance->CNT - rf->lastCNT;
+  }
+  rf->lastCNT = _REMOTE_DECODER_TIM.Instance->CNT;
+  rf->lastPinChangeTimeMs = HAL_GetTick();
 }
-//##############################################################################################
-bool	RemoteDecoder_Decode(uint8_t SelectDecodedData)
+//###########################################################################################################
+void RemoteDecoder_loop(RemoteDecoder_t *rf)
 {
-	int8_t		BitCnt=7;
-	uint8_t		ByteCnt=0;
-	if(SelectDecodedData<2)
-		SelectDecodedData=0;
-	else
-		SelectDecodedData=1;
-	if(RemoteDecoder.Index<50)
-		goto ERROR;
-	memset(RemoteDecoder.DecodedData[SelectDecodedData],0,sizeof(RemoteDecoder.DecodedData[SelectDecodedData]));
-	RemoteDecoder.DecodedDataLen[SelectDecodedData]=0;
-	for(uint16_t i=0 ; i<RemoteDecoder.Index-2 ; i+=2)
-	{
-		if(RemoteDecoder_CheckBitLen(RemoteDecoder.Buff[i+1],RemoteDecoder.Buff[i+2])==false)
-		{
-			goto ERROR;
-		}
-		uint8_t D=RemoteDecoder_CalcDuty(RemoteDecoder.Buff[i+1],RemoteDecoder.Buff[i+2]);
-		if(RemoteDecoder_CheckTolerance(D,_REMOTE_DECODER_BIT_0_DUTY)==true) // BIT 0
-		{
-			
-		}
-		else if(RemoteDecoder_CheckTolerance(D,_REMOTE_DECODER_BIT_1_DUTY)==true) // BIT 1
-		{
-			RemoteDecoder.DecodedData[SelectDecodedData][ByteCnt] |=  1<<BitCnt;
-		}
-		else	// BIT error
-			goto ERROR;
-		RemoteDecoder.DecodedDataLen[SelectDecodedData]++;
-		BitCnt--;
-		if(BitCnt==-1)
-		{
-			BitCnt=7;
-			ByteCnt++;
-		}
-	}
-	return true;		
-	ERROR:
-	memset(RemoteDecoder.DecodedData[SelectDecodedData],0,sizeof(RemoteDecoder.DecodedData[SelectDecodedData]));
-	RemoteDecoder.DecodedDataLen[SelectDecodedData]=0;
-	return false;				
+  if(rf == NULL)
+    return;
+  if((rf->newFrame == 1) && (rf->endFrame == 0) && (HAL_GetTick() - rf->lastPinChangeTimeMs > _REMOTE_DECODER_TIMEOUT_TO_DETECT_NEW_FRAME_IN_MS))
+  {
+    rf->index = 0;
+    rf->newFrame = 0;
+    rf->endFrame = 0;      
+  }
+  else if(rf->endFrame == 1)
+  {
+    // +++ decode
+    do
+    {
+      if((rf->dataRawStart < (rf->dataRawEnd - rf->dataRawEnd * _REMOTE_DECODER_TOLERANCE_IN_PERCENT / 100))\
+        || (rf->dataRawStart > (rf->dataRawEnd + rf->dataRawEnd * _REMOTE_DECODER_TOLERANCE_IN_PERCENT / 100)))
+        break;
+      uint8_t signalSum = rf->dataRawStart / 8;
+      uint8_t signalH = signalSum * 75 / 100;
+      uint8_t signalL = signalSum * 25 / 100;
+      int8_t bit = 7,byte = 0;
+      memset(rf->data,0,sizeof(rf->data));
+      rf->dataLen = 0;
+      for(uint8_t i=0; i<rf->index ; i+=2)
+      {
+        if((rf->dataRaw[i] >= (signalH - signalH * _REMOTE_DECODER_TOLERANCE_IN_PERCENT / 100))\
+          && (rf->dataRaw[i] <= (signalH + signalH * _REMOTE_DECODER_TOLERANCE_IN_PERCENT / 100))\
+          && (rf->dataRaw[i+1] >= (signalL - signalL * _REMOTE_DECODER_TOLERANCE_IN_PERCENT / 100))\
+          && (rf->dataRaw[i+1] <= (signalL + signalL * _REMOTE_DECODER_TOLERANCE_IN_PERCENT / 100)))
+        {
+          rf->data[byte] |= (1 << bit);          
+        }
+        else if((rf->dataRaw[i] >= (signalL - signalL * _REMOTE_DECODER_TOLERANCE_IN_PERCENT / 100))\
+          && (rf->dataRaw[i] <= (signalL + signalL * _REMOTE_DECODER_TOLERANCE_IN_PERCENT / 100))\
+          && (rf->dataRaw[i+1] >= (signalH - signalH * _REMOTE_DECODER_TOLERANCE_IN_PERCENT / 100))\
+          && (rf->dataRaw[i+1] <= (signalH + signalH * _REMOTE_DECODER_TOLERANCE_IN_PERCENT / 100)))
+        {
+          __NOP();
+        }
+        else
+          break;        
+        bit--;
+        if(bit < 0)
+        {
+          byte++;
+          bit = 7;
+        }        
+      }
+      rf->dataLen = byte;
+      rf->dataAvailable = 1;  
+    }while(0);
+    // --- decode
+    rf->index = 0;
+    rf->newFrame = 0;
+    rf->endFrame = 0; 
+  }
 }
-//##############################################################################################
-void	RemoteDetector_PinChangeCallBack(void)
+//###########################################################################################################
+bool RemoteDecoder_available(RemoteDecoder_t *rf, uint8_t *code, uint8_t *codeLenInByte, uint8_t *syncTime_us)
 {
-	RemoteDecoder.LastPinChangeInSystick=HAL_GetTick();
-	if(RemoteDecoder.AllowToGetNewSample==0)
-		return;
-	if(RemoteDecoder.Index==0)
-	{
-		_REMOTE_DECODER_TIM.Instance->CNT = 0;
-		RemoteDecoder.LastPinChangeInTimer = 0;
-		RemoteDecoder.Buff[RemoteDecoder.Index] = _REMOTE_DECODER_TIM.Instance->CNT;
-	}
-	else
-	{
-		RemoteDecoder.Buff[RemoteDecoder.Index] = _REMOTE_DECODER_TIM.Instance->CNT-RemoteDecoder.LastPinChangeInTimer;			
-		RemoteDecoder.LastPinChangeInTimer = _REMOTE_DECODER_TIM.Instance->CNT;
-	}
-	if(RemoteDecoder.Index < _REMOTE_DECODER_BUFFER_SIZE-1)
-		RemoteDecoder.Index++;		
+  if(rf == NULL)
+    return false;
+  if(rf->dataAvailable > 0)
+  {
+    if(code != NULL)
+      memcpy(code, rf->data, rf->dataLen);
+    if(codeLenInByte != NULL)
+      *codeLenInByte = rf->dataLen;
+    if(syncTime_us != NULL)
+      *syncTime_us = rf->dataRawStart * 10;    
+    rf->dataAvailable = 0;
+    return true;
+  }
+  else
+    return false; 
 }
-//##############################################################################################
-bool RemoteDecoder_Init(osPriority Priority)
-{	
-	osThreadDef(RemoteDecoderTask, StartRemoteDecoderTask, Priority, 0, 128);
-  RemoteDecoderTaskHandle = osThreadCreate(osThread(RemoteDecoderTask), NULL);
-	if(RemoteDecoderTaskHandle==NULL)
-		return false;
-	else
-		return true;
-}
-//##############################################################################################
-void StartRemoteDecoderTask(void const * argument)
-{
-	uint8_t   RemoteDetect=0;
-	_REMOTE_DECODER_TIM.Instance->ARR = 0xFFFF;
-	HAL_TIM_Base_Start(&_REMOTE_DECODER_TIM);
-	while(1)
-	{		
-		if(HAL_GetTick()-RemoteDecoder.LastPinChangeInSystick > _REMOTE_DECODER_MINIMUM_STAY_IN_LOW_STATE_FOR_DETECT_SIGNAL_IN_MS)
-		{			
-			if(HAL_GPIO_ReadPin(_REMOTE_DETECTOR_GPIO,_REMOTE_DETECTOR_PIN)==GPIO_PIN_RESET)
-			{
-				if(RemoteDecoder.AllowToGetNewSample==0)
-				{
-					memset(RemoteDecoder.Buff,0,_REMOTE_DECODER_BUFFER_SIZE);
-					RemoteDecoder.Index=0;
-					RemoteDecoder.AllowToGetNewSample=1;
-				}
-				if(RemoteDecoder.Index>0)
-				{
-					RemoteDecoder.AllowToGetNewSample=0;
-					//+++	Got a frame
-					if(RemoteDecoder_Decode(RemoteDetect)==true)
-					{
-						if(RemoteDetect==2) // check 2 times for ensure
-						{
-							RemoteDetect=3;
-							if( memcmp(RemoteDecoder.DecodedData[0],RemoteDecoder.DecodedData[1],sizeof(RemoteDecoder.DecodedData[0]))==0)
-							{
-								RemoteDecoder_User_Detect(RemoteDecoder.DecodedData[0],RemoteDecoder.DecodedDataLen[0],RemoteDecoder.Buff,RemoteDecoder.Index);
-								osDelay(100);
-							}							
-						}
-						if(RemoteDetect==1)				
-						{
-							RemoteDetect=2;	
-						}
-						if(RemoteDetect==0)				
-						{
-							RemoteDetect=1;
-						}						
-					}
-					else						
-					{
-						RemoteDetect=0;				
-					}
-					//---	Got a frame
-				}				
-			}
-		}					
-		osDelay(1);
-	}	
-}
-//##############################################################################################
-
-
-
+//###########################################################################################################
