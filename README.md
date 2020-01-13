@@ -18,7 +18,7 @@ How to use this Library:
 * Put RemoteDecoder_loop(&rf) function in your loop.
 * Read data by RemoteDecoder_available(&rf,code,&len,&time);
 
-* Example:
+  Example:
 
 ```
 #include "remotedecoder.h"
