@@ -93,7 +93,8 @@ void RemoteDecoder_loop(RemoteDecoder_t *rf)
         }        
       }
       rf->dataLen = byte;
-      rf->dataAvailable = 1;  
+      if((rf->dataLen >= _REMOTE_DECODER_MIN_DATA_BYTE) && (rf->dataLen <= _REMOTE_DECODER_MAX_DATA_BYTE)) 
+        rf->dataAvailable = 1;  
     }while(0);
     // --- decode
     rf->index = 0;
@@ -102,22 +103,28 @@ void RemoteDecoder_loop(RemoteDecoder_t *rf)
   }
 }
 //###########################################################################################################
-bool RemoteDecoder_available(RemoteDecoder_t *rf, uint8_t *code, uint8_t *codeLenInByte, uint8_t *syncTime_us)
+bool RemoteDecoder_available(RemoteDecoder_t *rf)
 {
   if(rf == NULL)
     return false;
-  if(rf->dataAvailable > 0)
+  if(rf->dataAvailable == 1)
   {
-    if(code != NULL)
-      memcpy(code, rf->data, rf->dataLen);
-    if(codeLenInByte != NULL)
-      *codeLenInByte = rf->dataLen;
-    if(syncTime_us != NULL)
-      *syncTime_us = rf->dataRawStart * 10;    
     rf->dataAvailable = 0;
     return true;
   }
   else
     return false; 
+}
+//###########################################################################################################
+void RemoteDecoder_read(RemoteDecoder_t *rf, uint8_t *code, uint8_t *codeLenInByte, uint8_t *syncTime_us)
+{
+  if(rf == NULL)
+    return;
+  if(code != NULL)
+    memcpy(code, rf->data, rf->dataLen);
+  if(codeLenInByte != NULL)
+    *codeLenInByte = rf->dataLen;
+  if(syncTime_us != NULL)
+    *syncTime_us = rf->dataRawStart * 10;    
 }
 //###########################################################################################################

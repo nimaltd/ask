@@ -2,23 +2,28 @@
 #ifndef _REMOTE_DECODER_H
 #define _REMOTE_DECODER_H
 
-
 /*
   Author:     Nima Askari
   WebSite:    http://www.github.com/NimaLTD
   Instagram:  http://instagram.com/github.NimaLTD
   Youtube:    https://www.youtube.com/channel/UCUhY7qY1klJm1d2kulr9ckw
   
-  Version:    2.0.0
+  Version:    2.1.0
   
   
   Reversion History:
-
+  
+  (2.1.0)
+  Add "_REMOTE_DECODER_MIN_DATA_BYTE" to config.
+  Add "RemoteDecoder_read() function.
+  Improve noise cancelling.
+  
   (2.0.0)
   Rewrite again.
   Improve performance.
 
 */
+
 #ifdef __cplusplus
  extern "C" {
 #endif
@@ -28,7 +33,6 @@
 #include <stdbool.h>
 #include "gpio.h"   
 #include "main.h"
-
 
 #define   _REMOTE_DECODER_EDGE    (_REMOTE_DECODER_MAX_DATA_BYTE*16+2) 
 
@@ -57,7 +61,8 @@ typedef struct
 void    RemoteDecoder_init(RemoteDecoder_t *rf, GPIO_TypeDef  *gpio, uint16_t  pin);
 void    RemoteDecoder_callBack(RemoteDecoder_t *rf);
 void    RemoteDecoder_loop(RemoteDecoder_t *rf);
-bool    RemoteDecoder_available(RemoteDecoder_t *rf, uint8_t *code, uint8_t *codeLenInByte, uint8_t *syncTime_us);
+bool    RemoteDecoder_available(RemoteDecoder_t *rf);
+void    RemoteDecoder_read(RemoteDecoder_t *rf, uint8_t *code, uint8_t *codeLenInByte, uint8_t *syncTime_us);
 //#####################################################################################################
 #ifdef __cplusplus
 }

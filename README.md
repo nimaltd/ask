@@ -16,16 +16,19 @@ How to use this Library:
 * Add RemoteDecoder_callBack(&rf) on external interrupt routin.
 * RemoteDecoder_init(&rf,GPIO,PIN) on your app.
 * Put RemoteDecoder_loop(&rf) function in your loop.
-* Read data by RemoteDecoder_available(&rf,code,&len,&time);
+* Read data after RemoteDecoder_available returned true.
+* Read data by RemoteDecoder_read(&rf,code,&len,&time);
 
   Example:
 
 ```
 #include "remotedecoder.h"
+#include <stdio.h>
 .
 .
 RemoteDecoder_t	rf;
-uint8_t	code[3];
+uint8_t	RemoteData[3];
+uint8_t RemoteDataLen;
 .
 .
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
@@ -50,12 +53,12 @@ int main()
 		.
 		.
 		RemoteDecoder_loop(&rf);
-		if(RemoteDecoder_available(&rf,code,NULL,NULL) == true)
+		if(RemoteDecoder_available(&rf) == true)
 		{
-			.
-			.
-			.		
-		}	
+			RemoteDecoder_read(&rf, RemoteData, &RemoteDataLen,NULL);
+			printf("CODE %d , 0x%X , 0x%X , 0x%X \r\n",RemoteDataLen,RemoteData[0],RemoteData[1],RemoteData[2]);
+		}
+    
 	}
 }
 ```
