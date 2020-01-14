@@ -113,18 +113,28 @@ bool RemoteDecoder_available(RemoteDecoder_t *rf)
     return true;
   }
   else
+  {
+    if(HAL_GetTick() - rf->dataTime > 300)
+      memset(rf->dataLast, 0, sizeof(rf->dataLast));        
     return false; 
+  }
 }
 //###########################################################################################################
-void RemoteDecoder_read(RemoteDecoder_t *rf, uint8_t *code, uint8_t *codeLenInByte, uint8_t *syncTime_us)
+bool RemoteDecoder_read(RemoteDecoder_t *rf, uint8_t *code, uint8_t *codeLenInByte, uint8_t *syncTime_us)
 {
   if(rf == NULL)
-    return;
+    return false;
+  bool  isNew = false;
   if(code != NULL)
     memcpy(code, rf->data, rf->dataLen);
   if(codeLenInByte != NULL)
     *codeLenInByte = rf->dataLen;
   if(syncTime_us != NULL)
     *syncTime_us = rf->dataRawStart * 10;    
+  if(memcmp(rf->dataLast, rf->data, rf->dataLen) != 0)
+    isNew = true;
+  memcpy(rf->dataLast, rf->data, rf->dataLen);
+  rf->dataTime = HAL_GetTick();
+  return isNew;
 }
 //###########################################################################################################

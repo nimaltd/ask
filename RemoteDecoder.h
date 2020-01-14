@@ -8,10 +8,13 @@
   Instagram:  http://instagram.com/github.NimaLTD
   Youtube:    https://www.youtube.com/channel/UCUhY7qY1klJm1d2kulr9ckw
   
-  Version:    2.1.0
+  Version:    2.2.0
   
   
   Reversion History:
+  
+  (2.2.0)
+  Detect new or hold key pressed.
   
   (2.1.0)
   Add "_REMOTE_DECODER_MIN_DATA_BYTE" to config.
@@ -52,8 +55,10 @@ typedef struct
   uint16_t      dataRawEnd;
   
   uint8_t       data[_REMOTE_DECODER_MAX_DATA_BYTE];
+  uint8_t       dataLast[_REMOTE_DECODER_MAX_DATA_BYTE];
   uint8_t       dataLen;
   uint8_t       dataAvailable;
+  uint32_t      dataTime;
   
 }RemoteDecoder_t;
 
@@ -62,7 +67,7 @@ void    RemoteDecoder_init(RemoteDecoder_t *rf, GPIO_TypeDef  *gpio, uint16_t  p
 void    RemoteDecoder_callBack(RemoteDecoder_t *rf);
 void    RemoteDecoder_loop(RemoteDecoder_t *rf);
 bool    RemoteDecoder_available(RemoteDecoder_t *rf);
-void    RemoteDecoder_read(RemoteDecoder_t *rf, uint8_t *code, uint8_t *codeLenInByte, uint8_t *syncTime_us);
+bool    RemoteDecoder_read(RemoteDecoder_t *rf, uint8_t *code, uint8_t *codeLenInByte, uint8_t *syncTime_us);
 //#####################################################################################################
 #ifdef __cplusplus
 }
