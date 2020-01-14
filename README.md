@@ -55,10 +55,11 @@ int main()
 		RemoteDecoder_loop(&rf);
 		if(RemoteDecoder_available(&rf) == true)
 		{
-			RemoteDecoder_read(&rf, RemoteData, &RemoteDataLen,NULL);
-			printf("CODE %d , 0x%X , 0x%X , 0x%X \r\n",RemoteDataLen,RemoteData[0],RemoteData[1],RemoteData[2]);
+			if(RemoteDecoder_read(&rf, RemoteData, &RemoteDataLen,NULL))
+				printf("(NEW KEY) CODE %d , 0x%X , 0x%X , 0x%X \r\n",RemoteDataLen,RemoteData[0],RemoteData[1],RemoteData[2]);
+			else
+				printf("(HOLD KEY) CODE %d , 0x%X , 0x%X , 0x%X \r\n",RemoteDataLen,RemoteData[0],RemoteData[1],RemoteData[2]);
 		}
-    
 	}
 }
 ```
