@@ -13,7 +13,7 @@ How to use this Library:
 * Include Header and source into your project.   
 * Config your "askConfig.h".
 * Create a struct(EX: ask_t rf).
-* Add ask_callBackPinChange(&rf) on external interrupt routin.
+* Add ask_callbackPinChange(&rf) on external interrupt routin.
 * ask_init(&rf,GPIO,PIN) on your app.
 * Put ask_loop(&rf) function in your loop.
 * Read data after ask_available returned true.
