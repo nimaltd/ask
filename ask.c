@@ -139,7 +139,7 @@ bool ask_read(ask_t *rf, uint8_t *code, uint8_t *codeLenInByte, uint8_t *syncTim
   return isNew;
 }
 //###########################################################################################################
-int8_t ask_checkChannel(uint8_t *newCode, uint8_t *refrence, uint8_t len)
+int16_t ask_checkChannelLast4Bit(uint8_t *newCode, uint8_t *refrence, uint8_t len)
 {
   if (len < 1)
     return -1;
@@ -150,5 +150,14 @@ int8_t ask_checkChannel(uint8_t *newCode, uint8_t *refrence, uint8_t len)
   if (memcmp(maskNew, maskRef, len) != 0)
     return -1;
   return newCode[len - 1] & 0x0F;
+}
+//###########################################################################################################
+int16_t ask_checkChannelLast8Bit(uint8_t *newCode, uint8_t *refrence, uint8_t len)
+{
+  if (len < 1)
+    return -1;
+  if (memcmp(newCode, refrence, len - 1) != 0)
+    return -1;
+  return newCode[len - 1];
 }
 //###########################################################################################################

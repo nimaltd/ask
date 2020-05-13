@@ -74,9 +74,10 @@ bool    ask_available(ask_t *rf);
 bool    ask_read(ask_t *rf, uint8_t *code, uint8_t *codeLenInByte, uint8_t *syncTime_us);
 /*
         return -1 if faild
-        return >= 0 , pressed channel . mask 4 last bit
+        return >= 0 , pressed channel.
 */
-int8_t  ask_checkChannel(uint8_t *newCode, uint8_t *refrence, uint8_t len);
+int16_t ask_checkChannelLast4Bit(uint8_t *newCode, uint8_t *refrence, uint8_t len);
+int16_t ask_checkChannelLast8Bit(uint8_t *newCode, uint8_t *refrence, uint8_t len);
 //#####################################################################################################
 #ifdef __cplusplus
 }
