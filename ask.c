@@ -145,6 +145,8 @@ int16_t ask_checkChannelLast4Bit(uint8_t *newCode, uint8_t *refrence, uint8_t le
     return -1;
   uint8_t maskNew[len];
   uint8_t maskRef[len];
+  memcpy(maskNew, newCode, len);
+  memcpy(maskRef, refrence, len);
   maskNew[len - 1] &= 0xF0; 
   maskRef[len - 1] &= 0xF0; 
   if (memcmp(maskNew, maskRef, len) != 0)

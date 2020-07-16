@@ -8,10 +8,13 @@
   Instagram:  http://instagram.com/github.NimaLTD
   Youtube:    https://www.youtube.com/channel/UCUhY7qY1klJm1d2kulr9ckw
   
-  Version:    2.3.0
+  Version:    2.3.1
   
   
   Reversion History:
+  
+  (2.3.1)
+  Fix ask_checkChannelLast4Bit() bug.
   
   (2.3.0)
   Change file and functions name.
