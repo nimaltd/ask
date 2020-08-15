@@ -1,5 +1,5 @@
 # Stm32 Remote decoder (EV1527,PT2262,PT2264 and ...)
-
+[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/O5O4221XY)
 * http://www.github.com/NimaLTD   
 * https://www.instagram.com/github.nimaltd/   
 * https://www.youtube.com/channel/UCUhY7qY1klJm1d2kulr9ckw   
