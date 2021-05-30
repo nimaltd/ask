@@ -1,5 +1,4 @@
 # All mcu and platform Remote decoder (EV1527,PT2262,PT2264 and ...)
-[![ko-fi](https://www.ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/O5O4221XY)
 
  *	WebSite:    https://www.github.com/NimaLTD
  *	Instagram:  https://www.instagram.com/github.NimaLTD
@@ -17,5 +16,3 @@ How to use this Library:
 * fn_write_pin: write tx pin to 0 and 1.
 * fn_read_pin: read rx pin.
 * fn_delay: delay in miliseconds.
-* 
-
