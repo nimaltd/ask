@@ -7,7 +7,7 @@
 #define _ASK_TOLERANCE_                 40  //  %
 
 
-#if (_ASK_MIN_BYTE_LEN_ < _ASK_MAX_BYTE_LEN_)
+#if (_ASK_MAX_BYTE_LEN_ < _ASK_MIN_BYTE_LEN_)
 #error SELECT CORRECT ASK MIN/MAX BYTE LENGHT
 #endif
 
