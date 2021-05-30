@@ -1,144 +1,212 @@
 
+#include "ask_config.h"
 #include "ask.h"
-#include "tim.h"
 #include <string.h>
 
-  
-//###########################################################################################################
-void ask_init(ask_t *rf, GPIO_TypeDef  *gpio, uint16_t  pin)
+//################################################################################################################
+bool ask_init(ask_t *ask)
 {
-  if (rf == NULL)
-    return;
-  memset(rf, 0, sizeof(ask_t));
-  rf->gpio = gpio;
-  rf->pin = pin; 
-  _ASK_TIM.Instance->ARR = 0xFFFF;
-  rf->lastPinChangeTimeMs = HAL_GetTick(); 
-  HAL_TIM_Base_Start(&_ASK_TIM);  
-}
-//###########################################################################################################
-void ask_callBackPinChange(ask_t *rf)
-{
-  if (rf == NULL)
-    return;
-  if ((rf->newFrame == 1) && (rf->endFrame == 0))
-  {
-    rf->dataRaw[rf->index] = _ASK_TIM.Instance->CNT - rf->lastCNT;
-    if (rf->index < _ASK_EDGE)
-      rf->index++;
-    if ((HAL_GetTick() - rf->lastPinChangeTimeMs > _ASK_MINIMUM_STAY_IN_LOW_STATE_TO_DETECT_NEW_FRAME_IN_MS)\
-      && (HAL_GPIO_ReadPin(rf->gpio, rf->pin) == GPIO_PIN_SET))
+    ask->lock = false;
+    if (ask->fn_micros10 == NULL)
+    return false;
+    if (ask->fn_delay == NULL)
+        return false;
+    if ((ask->fn_init_rx == NULL) && (ask->fn_init_tx == NULL))
+        return false;
+    if (ask->fn_init_rx != NULL)
     {
-      rf->endFrame = 1;
-      rf->dataRawEnd = _ASK_TIM.Instance->CNT - rf->lastCNT;
+        ask->fn_init_rx();
+        ask->detect_busy = false;
     }
-  }
-  else if ((rf->newFrame == 0) && (HAL_GetTick() - rf->lastPinChangeTimeMs > _ASK_MINIMUM_STAY_IN_LOW_STATE_TO_DETECT_NEW_FRAME_IN_MS)\
-    && (HAL_GPIO_ReadPin(rf->gpio, rf->pin) == GPIO_PIN_SET))
-  {
-    rf->newFrame = 1;
-    rf->dataRawStart = _ASK_TIM.Instance->CNT - rf->lastCNT;
-  }
-  rf->lastCNT = _ASK_TIM.Instance->CNT;
-  rf->lastPinChangeTimeMs = HAL_GetTick();
+    if (ask->fn_init_tx != NULL)
+        ask->fn_init_tx();
+    if (ask->fn_write_pin != NULL)
+        ask->fn_write_pin(false);
+    return true;
 }
-//###########################################################################################################
-void ask_loop(ask_t *rf)
+//################################################################################################################
+void ask_pinchange_callback(ask_t *ask)
 {
-  if (rf == NULL)
-    return;
-  if ((rf->newFrame == 1) && (rf->endFrame == 0) && (HAL_GetTick() - rf->lastPinChangeTimeMs > _ASK_TIMEOUT_TO_DETECT_NEW_FRAME_IN_MS))
-  {
-    rf->index = 0;
-    rf->newFrame = 0;
-    rf->endFrame = 0;      
-  }
-  else if (rf->endFrame == 1)
-  {
-    // +++ decode
-    do
+    if (ask->disable_rx)
+        return;
+    if (ask->detect_end == false)
     {
-      if ((rf->dataRawStart < (rf->dataRawEnd - rf->dataRawEnd * _ASK_TOLERANCE_IN_PERCENT / 100))\
-        || (rf->dataRawStart > (rf->dataRawEnd + rf->dataRawEnd * _ASK_TOLERANCE_IN_PERCENT / 100)))
-        break;
-      uint8_t signalSum = rf->dataRawStart / 8;
-      uint8_t signalH = signalSum * 75 / 100;
-      uint8_t signalL = signalSum * 25 / 100;
-      int8_t bit = 7,byte = 0;
-      memset(rf->data,0,sizeof(rf->data));
-      rf->dataLen = 0;
-      for (uint8_t i=0; i<rf->index ; i+=2)
-      {
-        if ((rf->dataRaw[i] >= (signalH - signalH * _ASK_TOLERANCE_IN_PERCENT / 100))\
-          && (rf->dataRaw[i] <= (signalH + signalH * _ASK_TOLERANCE_IN_PERCENT / 100))\
-          && (rf->dataRaw[i+1] >= (signalL - signalL * _ASK_TOLERANCE_IN_PERCENT / 100))\
-          && (rf->dataRaw[i+1] <= (signalL + signalL * _ASK_TOLERANCE_IN_PERCENT / 100)))
+        if (ask->detect_begin == false)
         {
-          rf->data[byte] |= (1 << bit);          
-        }
-        else if ((rf->dataRaw[i] >= (signalL - signalL * _ASK_TOLERANCE_IN_PERCENT / 100))\
-          && (rf->dataRaw[i] <= (signalL + signalL * _ASK_TOLERANCE_IN_PERCENT / 100))\
-          && (rf->dataRaw[i+1] >= (signalH - signalH * _ASK_TOLERANCE_IN_PERCENT / 100))\
-          && (rf->dataRaw[i+1] <= (signalH + signalH * _ASK_TOLERANCE_IN_PERCENT / 100)))
-        {
-          __NOP();
+            if ((ask->fn_micros10() - ask->time > (_ASK_MIN_NEW_FRAM_DETECT_TIME_ * 100)) && ask->fn_read_pin())
+            {
+                ask->detect_begin = true;
+                ask->index = 0;
+            }        
         }
         else
-          break;        
-        bit--;
-        if (bit < 0)
         {
-          byte++;
-          bit = 7;
-        }        
-      }
-      rf->dataLen = byte;
-      if ((rf->dataLen >= _ASK_MIN_DATA_BYTE) && (rf->dataLen <= _ASK_MAX_DATA_BYTE)) 
-        rf->dataAvailable = 1;  
+            if ((ask->fn_micros10() - ask->time > (_ASK_MIN_NEW_FRAM_DETECT_TIME_ * 100)) && ask->fn_read_pin())
+            {
+                ask->detect_end = true;
+            }        
+            else
+            {
+                ask->buffer[ask->index] = ask->fn_micros10() - ask->time;
+                if (ask->index < sizeof(ask->buffer) - 1)
+                    ask->index++;
+            }
+            
+        }
     }
-    while (0);
-    // --- decode
-    rf->index = 0;
-    rf->newFrame = 0;
-    rf->endFrame = 0; 
-  }
+    ask->time = ask->fn_micros10();
 }
-//###########################################################################################################
-bool ask_available(ask_t *rf)
+//################################################################################################################
+bool ask_available(ask_t *ask)
 {
-  if (rf == NULL)
+    while (ask->lock == true)
+        ask->fn_delay(1);
+    ask->lock = true;
+    if (ask->index > (_ASK_MAX_BYTE_LEN_ * 16 + 1))
+    {
+        ask->detect_begin = false;
+        ask->detect_end = false;
+        ask->lock = false;
+        return false;
+    }
+    if (ask->detect_end && !ask->detect_busy)
+    {
+        do
+        {
+            if (ask->index < (_ASK_MIN_BYTE_LEN_ * 16 + 1))
+                break;
+            memset(ask->buffer_byte, 0, _ASK_MAX_BYTE_LEN_);
+            ask->buffer_time = ask->buffer[0] + ask->buffer[1];
+            if (ask->buffer[0] > ask->buffer[1])
+            {
+                ask->buffer_time_high[0] = ask->buffer[0] - ((_ASK_TOLERANCE_ * ask->buffer[0]) / 100.0f);
+                ask->buffer_time_high[1] = ask->buffer[0] + ((_ASK_TOLERANCE_ * ask->buffer[0]) / 100.0f);
+                ask->buffer_time_low[0] = ask->buffer[1] - ((_ASK_TOLERANCE_ * ask->buffer[1]) / 100.0f);
+                ask->buffer_time_low[1] = ask->buffer[1] + ((_ASK_TOLERANCE_ * ask->buffer[1]) / 100.0f);
+            }
+            else if (ask->buffer[0] < ask->buffer[1])
+            {
+                ask->buffer_time_high[0] = ask->buffer[1] - ((_ASK_TOLERANCE_ * ask->buffer[1]) / 100.0f);
+                ask->buffer_time_high[1] = ask->buffer[1] + ((_ASK_TOLERANCE_ * ask->buffer[1]) / 100.0f);
+                ask->buffer_time_low[0] = ask->buffer[0] - ((_ASK_TOLERANCE_ * ask->buffer[0]) / 100.0f);
+                ask->buffer_time_low[1] = ask->buffer[0] + ((_ASK_TOLERANCE_ * ask->buffer[0]) / 100.0f);
+            }
+            else 
+                break;
+            ask->data_bit = 0;
+            memset(ask->data_byte, 0, _ASK_MAX_BYTE_LEN_);
+            for (uint16_t i = 0; i < ask->index - 1 ; i+=2)
+            {
+                //  detect 0 data
+                if ((ask->buffer[i] > ask->buffer_time_low[0]) && (ask->buffer[i] < ask->buffer_time_low[1])
+                    && (ask->buffer[i+1] > ask->buffer_time_high[0]) && (ask->buffer[i+1] < ask->buffer_time_high[1]))
+                {
+                    ask->data_bit++;
+                }
+                //  detect 1 data
+                else if ((ask->buffer[i+1] > ask->buffer_time_low[0]) && (ask->buffer[i+1] < ask->buffer_time_low[1])
+                    && (ask->buffer[i] > ask->buffer_time_high[0]) && (ask->buffer[i] < ask->buffer_time_high[1]))
+                {
+                    ask->data_byte[ask->data_bit / 8] |= 0x80 >> (ask->data_bit % 8);
+                    ask->data_bit++;
+                }
+                else
+                    break;                
+            }
+            if (ask->data_bit % 8 != 0)
+                break;
+            if ((ask->data_bit > (_ASK_MAX_BYTE_LEN_ * 8)) || (ask->data_bit < (_ASK_MIN_BYTE_LEN_ * 8)))
+                break;
+            ask->detect_busy = true;
+            ask->lock = false;
+            return true;            
+               
+        } while (0);
+
+        ask->detect_begin = false;
+        ask->detect_end = false;
+        ask->lock = false;
+        return false;
+    }
+    ask->lock = false;
     return false;
-  if (rf->dataAvailable == 1)
-  {
-    rf->dataAvailable = 0;
-    return true;
-  }
-  else
-  {
-    if (HAL_GetTick() - rf->dataTime > _ASK_HOLD_LAST_FRAME_IN_MS)
-      memset(rf->dataLast, 0, sizeof(rf->dataLast));        
-    return false; 
-  }
 }
-//###########################################################################################################
-bool ask_read(ask_t *rf, uint8_t *code, uint8_t *codeLenInByte, uint8_t *syncTime_us)
+//################################################################################################################
+void ask_reset_available(ask_t *ask)
 {
-  if (rf == NULL)
-    return false;
-  bool  isNew = false;
-  if (code != NULL)
-    memcpy(code, rf->data, rf->dataLen);
-  if (codeLenInByte != NULL)
-    *codeLenInByte = rf->dataLen;
-  if (syncTime_us != NULL)
-    *syncTime_us = rf->dataRawStart * 10;    
-  if (memcmp(rf->dataLast, rf->data, rf->dataLen) != 0)
-    isNew = true;
-  memcpy(rf->dataLast, rf->data, rf->dataLen);
-  rf->dataTime = HAL_GetTick();
-  return isNew;
+    while (ask->lock == true)
+        ask->fn_delay(1);
+    ask->lock = true;
+    memset(ask->buffer, 0, sizeof(ask->buffer));
+    ask->detect_begin = false;
+    ask->detect_end = false;
+    ask->detect_busy = false;
+    ask->lock = false;
 }
-//###########################################################################################################
+//################################################################################################################
+uint8_t ask_read_bytes(ask_t *ask, uint8_t *data)
+{
+    while (ask->lock == true)
+        ask->fn_delay(1);
+    ask->lock = true;
+    memcpy(data, ask->data_byte, ask->data_bit / 8);
+    ask->lock = false;
+    return ask->data_bit / 8;
+}
+//################################################################################################################
+uint16_t ask_read_time_of_bit(ask_t *ask)
+{
+    return ask->buffer_time;   
+}
+//################################################################################################################
+void ask_send_bytes(ask_t *ask, uint8_t *data, uint8_t len, uint8_t bit_time_micros10, uint8_t try_to_send)
+{
+    if (ask->fn_init_tx == NULL)
+        return;
+    while (ask->lock == true)
+        ask->fn_delay(1);
+    ask->lock = true;
+    if (ask->fn_init_rx != NULL)
+        ask->disable_rx = true;
+    for (uint8_t t = 0; t < try_to_send; t++)
+    {    
+        ask->fn_write_pin(false);
+        uint32_t time;
+        ask->fn_delay(bit_time_micros10 * 8 / 100);
+        for (uint8_t byte = 0; byte < len; byte++)
+        {
+            for (int8_t bit = 7; bit > -1; bit--)
+            {
+                if (data[byte] & (1<<bit))
+                {
+                    ask->fn_write_pin(true);
+                    time = ask->fn_micros10();
+                    while (ask->fn_micros10() - time < (bit_time_micros10 * 75 / 100));
+                    ask->fn_write_pin(false);
+                    time = ask->fn_micros10();
+                    while (ask->fn_micros10() - time < (bit_time_micros10 * 25 / 100));
+                }
+                else
+                {
+                    ask->fn_write_pin(true);
+                    time = ask->fn_micros10();
+                    while (ask->fn_micros10() - time < (bit_time_micros10 * 25 / 100));
+                    ask->fn_write_pin(false);
+                    time = ask->fn_micros10();
+                    while (ask->fn_micros10() - time < (bit_time_micros10 * 75 / 100));
+                }
+            }
+        }
+        ask->fn_write_pin(true);
+        time = ask->fn_micros10();
+        while (ask->fn_micros10() - time < (bit_time_micros10 * 25 / 100));
+        ask->fn_write_pin(false);
+    }
+    if (ask->fn_init_rx != NULL)
+        ask->disable_rx = false;
+    ask->lock = false;
+}
+//################################################################################################################
 int16_t ask_checkChannelLast4Bit(uint8_t *newCode, uint8_t *refrence, uint8_t len)
 {
   if (len < 1)
@@ -153,7 +221,7 @@ int16_t ask_checkChannelLast4Bit(uint8_t *newCode, uint8_t *refrence, uint8_t le
     return -1;
   return newCode[len - 1] & 0x0F;
 }
-//###########################################################################################################
+//################################################################################################################
 int16_t ask_checkChannelLast8Bit(uint8_t *newCode, uint8_t *refrence, uint8_t len)
 {
   if (len < 1)
@@ -162,4 +230,4 @@ int16_t ask_checkChannelLast8Bit(uint8_t *newCode, uint8_t *refrence, uint8_t le
     return -1;
   return newCode[len - 1];
 }
-//###########################################################################################################
+//################################################################################################################

@@ -1,89 +1,72 @@
+#ifndef _ASK_H_
+#define _ASK_H_
 
-#ifndef _ASK_H
-#define _ASK_H
 
 /*
-  Author:     Nima Askari
-  WebSite:    http://www.github.com/NimaLTD
-  Instagram:  http://instagram.com/github.NimaLTD
-  Youtube:    https://www.youtube.com/channel/UCUhY7qY1klJm1d2kulr9ckw
-  
-  Version:    2.3.1
-  
-  
-  Reversion History:
-  
-  (2.3.1)
-  Fix ask_checkChannelLast4Bit() bug.
-  
-  (2.3.0)
-  Change file and functions name.
-  Add check remote and channel pressed.
-  
-  (2.2.0)
-  Detect new or hold key pressed.
-  
-  (2.1.0)
-  Add "_REMOTE_DECODER_MIN_DATA_BYTE" to config.
-  Add "RemoteDecoder_read() function.
-  Improve noise cancelling.
-  
-  (2.0.0)
-  Rewrite again.
-  Improve performance.
+ *	Author:     Nima Askari
+ *	WebSite:    https://www.github.com/NimaLTD
+ *	Instagram:  https://www.instagram.com/github.NimaLTD
+ *	LinkedIn:   https://www.linkedin.com/in/NimaLTD
+ *	Youtube:    https://www.youtube.com/channel/UCUhY7qY1klJm1d2kulr9ckw
+ */
 
-*/
+/*
+ * Version:	3.0.0
+ *
+ * History:
+ * 
+ * (3.0.0): Easy to port all mcu and platform. (STM32, ESP8266, ESP32, AVR, ARDUINO , ...) 
+ *          Can use 2 frequency at the same time. 
+ * 
+ * 
+ * */
 
 #ifdef __cplusplus
  extern "C" {
 #endif
 
-#include "askConfig.h"
-
+#include <stdint.h>
 #include <stdbool.h>
-#include "gpio.h"   
-#include "main.h"
+#include "ask_config.h"
 
-#define   _ASK_EDGE    (_ASK_MAX_DATA_BYTE*16+2) 
-
-//#####################################################################################################
-typedef struct
+typedef struct 
 {
-  GPIO_TypeDef  *gpio;
-  uint16_t      pin;
-  uint32_t      lastPinChangeTimeMs;
-  uint16_t      lastCNT;
-  uint8_t       newFrame;
-  uint8_t       endFrame;
-  uint8_t       index;    
-  
-  uint16_t      dataRawStart;       
-  uint8_t       dataRaw[_ASK_EDGE];
-  uint16_t      dataRawEnd;
-  
-  uint8_t       data[_ASK_MAX_DATA_BYTE];
-  uint8_t       dataLast[_ASK_MAX_DATA_BYTE];
-  uint8_t       dataLen;
-  uint8_t       dataAvailable;
-  uint32_t      dataTime;
-  
+    uint8_t     buffer[_ASK_MAX_BYTE_LEN_ * 16 + 2];
+    uint8_t     buffer_byte[_ASK_MAX_BYTE_LEN_];
+    uint8_t     buffer_time;
+    uint8_t     buffer_time_low[2];
+    uint8_t     buffer_time_high[2];
+    uint8_t     data_byte[_ASK_MAX_BYTE_LEN_];
+    uint8_t     data_bit;
+    uint32_t    time;
+    uint16_t    index;
+    bool        detect_begin;
+    bool        detect_end;
+    bool        detect_busy;
+    bool        disable_rx;
+    bool        lock;
+
+    void        (*fn_init_rx)(void);    
+    void        (*fn_init_tx)(void);    
+    void        (*fn_pinchange_callback)(void);
+    uint32_t    (*fn_micros10)(void);
+    void        (*fn_write_pin)(bool);
+    bool        (*fn_read_pin)(void);
+    void        (*fn_delay)(uint32_t);
+
 }ask_t;
 
-//#####################################################################################################
-void    ask_init(ask_t *rf, GPIO_TypeDef  *gpio, uint16_t  pin);
-void    ask_callBackPinChange(ask_t *rf);
-void    ask_loop(ask_t *rf);
-bool    ask_available(ask_t *rf);
-bool    ask_read(ask_t *rf, uint8_t *code, uint8_t *codeLenInByte, uint8_t *syncTime_us);
-/*
-        return -1 if faild
-        return >= 0 , pressed channel.
-*/
-int16_t ask_checkChannelLast4Bit(uint8_t *newCode, uint8_t *refrence, uint8_t len);
-int16_t ask_checkChannelLast8Bit(uint8_t *newCode, uint8_t *refrence, uint8_t len);
-//#####################################################################################################
+bool            ask_init(ask_t *ask);
+void            ask_pinchange_callback(ask_t *ask);
+bool            ask_available(ask_t *ask);
+void            ask_reset_available(ask_t *ask);
+uint8_t         ask_read_bytes(ask_t *ask, uint8_t *data);
+uint16_t        ask_read_time_of_bit(ask_t *ask);
+void            ask_send_bytes(ask_t *ask, uint8_t *data, uint8_t len, uint8_t bit_time_micros10, uint8_t try_to_send);
+int16_t         ask_checkChannelLast4Bit(uint8_t *newCode, uint8_t *refrence, uint8_t len);
+int16_t         ask_checkChannelLast8Bit(uint8_t *newCode, uint8_t *refrence, uint8_t len);
+
 #ifdef __cplusplus
 }
 #endif
-
 #endif
