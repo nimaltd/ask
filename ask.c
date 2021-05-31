@@ -7,33 +7,35 @@
 bool ask_init(ask_t *ask)
 {
     ask->lock = false;
-    if (ask->fn_micros10 == NULL)
-    return false;
-    if (ask->fn_delay == NULL)
+    if (ask->fn_micros == NULL)
         return false;
-    if ((ask->fn_init_rx == NULL) && (ask->fn_init_tx == NULL))
+    if (ask->fn_delay_ms == NULL)
         return false;
+    ask->detect_busy = false;        
     if (ask->fn_init_rx != NULL)
-    {
         ask->fn_init_rx();
-        ask->detect_busy = false;
-    }
+    if (ask->fn_read_pin != NULL)
+        ask->enable_rx = true;
     if (ask->fn_init_tx != NULL)
         ask->fn_init_tx();
-    if (ask->fn_write_pin != NULL)
+    if (ask->fn_write_pin != NULL) 
+    {
+        if (ask->fn_delay_us == NULL)
+            return false;    
         ask->fn_write_pin(false);
+    }
     return true;
 }
 //################################################################################################################
 void ask_pinchange_callback(ask_t *ask)
 {
-    if (ask->disable_rx)
+    if (!ask->enable_rx)
         return;
     if (ask->detect_end == false)
     {
         if (ask->detect_begin == false)
         {
-            if ((ask->fn_micros10() - ask->time > (_ASK_MIN_NEW_FRAM_DETECT_TIME_ * 100)) && ask->fn_read_pin())
+            if ((ask->fn_micros() - ask->time > _ASK_MIN_NEW_FRAM_DETECT_TIME_) && ask->fn_read_pin())
             {
                 ask->detect_begin = true;
                 ask->index = 0;
@@ -41,26 +43,26 @@ void ask_pinchange_callback(ask_t *ask)
         }
         else
         {
-            if ((ask->fn_micros10() - ask->time > (_ASK_MIN_NEW_FRAM_DETECT_TIME_ * 100)) && ask->fn_read_pin())
+            if ((ask->fn_micros() - ask->time > _ASK_MIN_NEW_FRAM_DETECT_TIME_) && ask->fn_read_pin())
             {
                 ask->detect_end = true;
             }        
             else
             {
-                ask->buffer[ask->index] = ask->fn_micros10() - ask->time;
+                ask->buffer[ask->index] = ask->fn_micros() - ask->time;
                 if (ask->index < sizeof(ask->buffer) - 1)
                     ask->index++;
             }
             
         }
     }
-    ask->time = ask->fn_micros10();
+    ask->time = ask->fn_micros();
 }
 //################################################################################################################
 bool ask_available(ask_t *ask)
 {
-    while (ask->lock == true)
-        ask->fn_delay(1);
+    if (ask->lock == true)
+        return false;
     ask->lock = true;
     if (ask->index > (_ASK_MAX_BYTE_LEN_ * 16 + 1))
     {
@@ -79,17 +81,17 @@ bool ask_available(ask_t *ask)
             ask->buffer_time = ask->buffer[0] + ask->buffer[1];
             if (ask->buffer[0] > ask->buffer[1])
             {
-                ask->buffer_time_high[0] = ask->buffer[0] - ((_ASK_TOLERANCE_ * ask->buffer[0]) / 100.0f);
-                ask->buffer_time_high[1] = ask->buffer[0] + ((_ASK_TOLERANCE_ * ask->buffer[0]) / 100.0f);
-                ask->buffer_time_low[0] = ask->buffer[1] - ((_ASK_TOLERANCE_ * ask->buffer[1]) / 100.0f);
-                ask->buffer_time_low[1] = ask->buffer[1] + ((_ASK_TOLERANCE_ * ask->buffer[1]) / 100.0f);
+                ask->buffer_time_high[0] = ask->buffer[0] - ((_ASK_TOLERANCE_ * ask->buffer[0]) / 100);
+                ask->buffer_time_high[1] = ask->buffer[0] + ((_ASK_TOLERANCE_ * ask->buffer[0]) / 100);
+                ask->buffer_time_low[0] = ask->buffer[1] - ((_ASK_TOLERANCE_ * ask->buffer[1]) / 100);
+                ask->buffer_time_low[1] = ask->buffer[1] + ((_ASK_TOLERANCE_ * ask->buffer[1]) / 100);
             }
             else if (ask->buffer[0] < ask->buffer[1])
             {
-                ask->buffer_time_high[0] = ask->buffer[1] - ((_ASK_TOLERANCE_ * ask->buffer[1]) / 100.0f);
-                ask->buffer_time_high[1] = ask->buffer[1] + ((_ASK_TOLERANCE_ * ask->buffer[1]) / 100.0f);
-                ask->buffer_time_low[0] = ask->buffer[0] - ((_ASK_TOLERANCE_ * ask->buffer[0]) / 100.0f);
-                ask->buffer_time_low[1] = ask->buffer[0] + ((_ASK_TOLERANCE_ * ask->buffer[0]) / 100.0f);
+                ask->buffer_time_high[0] = ask->buffer[1] - ((_ASK_TOLERANCE_ * ask->buffer[1]) / 100);
+                ask->buffer_time_high[1] = ask->buffer[1] + ((_ASK_TOLERANCE_ * ask->buffer[1]) / 100);
+                ask->buffer_time_low[0] = ask->buffer[0] - ((_ASK_TOLERANCE_ * ask->buffer[0]) / 100);
+                ask->buffer_time_low[1] = ask->buffer[0] + ((_ASK_TOLERANCE_ * ask->buffer[0]) / 100);
             }
             else 
                 break;
@@ -128,14 +130,28 @@ bool ask_available(ask_t *ask)
         ask->lock = false;
         return false;
     }
+    else if (ask->detect_busy)
+    {
+        ask->lock = false;
+        return true;      
+    }
     ask->lock = false;
     return false;
+}
+//################################################################################################################
+void ask_wait(ask_t *ask)
+{
+    while (ask_available(ask))
+    {
+        ask_reset_available(ask);
+        ask->fn_delay_ms(200);
+    }
 }
 //################################################################################################################
 void ask_reset_available(ask_t *ask)
 {
     while (ask->lock == true)
-        ask->fn_delay(1);
+        ask->fn_delay_ms(1);
     ask->lock = true;
     memset(ask->buffer, 0, sizeof(ask->buffer));
     ask->detect_begin = false;
@@ -147,7 +163,7 @@ void ask_reset_available(ask_t *ask)
 uint8_t ask_read_bytes(ask_t *ask, uint8_t *data)
 {
     while (ask->lock == true)
-        ask->fn_delay(1);
+        ask->fn_delay_ms(1);
     ask->lock = true;
     memcpy(data, ask->data_byte, ask->data_bit / 8);
     ask->lock = false;
@@ -159,20 +175,21 @@ uint16_t ask_read_time_of_bit(ask_t *ask)
     return ask->buffer_time;   
 }
 //################################################################################################################
-void ask_send_bytes(ask_t *ask, uint8_t *data, uint8_t len, uint8_t bit_time_micros10, uint8_t try_to_send)
+void ask_send_bytes(ask_t *ask, uint8_t *data, uint8_t len, uint32_t bit_time_micros, uint8_t try_to_send)
 {
-    if (ask->fn_init_tx == NULL)
+    if (ask->fn_write_pin == NULL)
         return;
     while (ask->lock == true)
-        ask->fn_delay(1);
+        ask->fn_delay_ms(1);
     ask->lock = true;
-    if (ask->fn_init_rx != NULL)
-        ask->disable_rx = true;
+    if (ask->fn_read_pin != NULL)
+        ask->enable_rx = false;
+    ask->fn_write_pin(true);
+    ask->fn_delay_ms(bit_time_micros * 8 / 1000);
     for (uint8_t t = 0; t < try_to_send; t++)
     {    
         ask->fn_write_pin(false);
-        uint32_t time;
-        ask->fn_delay(bit_time_micros10 * 8 / 100);
+        ask->fn_delay_ms(bit_time_micros * 8 / 1000);
         for (uint8_t byte = 0; byte < len; byte++)
         {
             for (int8_t bit = 7; bit > -1; bit--)
@@ -180,30 +197,25 @@ void ask_send_bytes(ask_t *ask, uint8_t *data, uint8_t len, uint8_t bit_time_mic
                 if (data[byte] & (1<<bit))
                 {
                     ask->fn_write_pin(true);
-                    time = ask->fn_micros10();
-                    while (ask->fn_micros10() - time < (bit_time_micros10 * 75 / 100));
+                    ask->fn_delay_us(bit_time_micros * 75 / 100);
                     ask->fn_write_pin(false);
-                    time = ask->fn_micros10();
-                    while (ask->fn_micros10() - time < (bit_time_micros10 * 25 / 100));
+                    ask->fn_delay_us(bit_time_micros * 25 / 100);                        
                 }
                 else
                 {
                     ask->fn_write_pin(true);
-                    time = ask->fn_micros10();
-                    while (ask->fn_micros10() - time < (bit_time_micros10 * 25 / 100));
+                    ask->fn_delay_us(bit_time_micros * 25 / 100);
                     ask->fn_write_pin(false);
-                    time = ask->fn_micros10();
-                    while (ask->fn_micros10() - time < (bit_time_micros10 * 75 / 100));
+                    ask->fn_delay_us(bit_time_micros * 75 / 100);                        
                 }
             }
         }
         ask->fn_write_pin(true);
-        time = ask->fn_micros10();
-        while (ask->fn_micros10() - time < (bit_time_micros10 * 25 / 100));
+        ask->fn_delay_us(bit_time_micros * 25 / 100);            
         ask->fn_write_pin(false);
     }
-    if (ask->fn_init_rx != NULL)
-        ask->disable_rx = false;
+    if (ask->fn_read_pin != NULL)
+        ask->enable_rx = true;
     ask->lock = false;
 }
 //################################################################################################################

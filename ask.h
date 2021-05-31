@@ -11,9 +11,11 @@
  */
 
 /*
- * Version:	3.0.0
+ * Version:	3.0.1
  *
  * History:
+ * 
+ * (3.0.1): Fixed some bugs. Changed some functions. Add ask_wait().
  * 
  * (3.0.0): Easy to port all mcu and platform. (STM32, ESP8266, ESP32, AVR, ARDUINO , ...) 
  *          Can use 2 frequency at the same time. 
@@ -31,11 +33,11 @@
 
 typedef struct 
 {
-    uint8_t     buffer[_ASK_MAX_BYTE_LEN_ * 16 + 2];
+    uint16_t    buffer[_ASK_MAX_BYTE_LEN_ * 16 + 2];
     uint8_t     buffer_byte[_ASK_MAX_BYTE_LEN_];
-    uint8_t     buffer_time;
-    uint8_t     buffer_time_low[2];
-    uint8_t     buffer_time_high[2];
+    uint16_t    buffer_time;
+    uint16_t    buffer_time_low[2];
+    uint16_t    buffer_time_high[2];
     uint8_t     data_byte[_ASK_MAX_BYTE_LEN_];
     uint8_t     data_bit;
     uint32_t    time;
@@ -43,26 +45,27 @@ typedef struct
     bool        detect_begin;
     bool        detect_end;
     bool        detect_busy;
-    bool        disable_rx;
+    bool        enable_rx;
     bool        lock;
 
     void        (*fn_init_rx)(void);    
     void        (*fn_init_tx)(void);    
-    void        (*fn_pinchange_callback)(void);
-    uint32_t    (*fn_micros10)(void);
+    uint32_t    (*fn_micros)(void);
     void        (*fn_write_pin)(bool);
     bool        (*fn_read_pin)(void);
-    void        (*fn_delay)(uint32_t);
+    void        (*fn_delay_ms)(uint32_t);
+    void        (*fn_delay_us)(uint32_t);
 
 }ask_t;
 
 bool            ask_init(ask_t *ask);
 void            ask_pinchange_callback(ask_t *ask);
 bool            ask_available(ask_t *ask);
+void            ask_wait(ask_t *ask);
 void            ask_reset_available(ask_t *ask);
 uint8_t         ask_read_bytes(ask_t *ask, uint8_t *data);
 uint16_t        ask_read_time_of_bit(ask_t *ask);
-void            ask_send_bytes(ask_t *ask, uint8_t *data, uint8_t len, uint8_t bit_time_micros10, uint8_t try_to_send);
+void            ask_send_bytes(ask_t *ask, uint8_t *data, uint8_t len, uint32_t bit_time_micros, uint8_t try_to_send);
 int16_t         ask_checkChannelLast4Bit(uint8_t *newCode, uint8_t *refrence, uint8_t len);
 int16_t         ask_checkChannelLast8Bit(uint8_t *newCode, uint8_t *refrence, uint8_t len);
 

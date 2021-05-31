@@ -3,7 +3,7 @@
 
 #define _ASK_MIN_BYTE_LEN_              3   //  byte
 #define _ASK_MAX_BYTE_LEN_              3   //  byte
-#define _ASK_MIN_NEW_FRAM_DETECT_TIME_  5   //  ms  
+#define _ASK_MIN_NEW_FRAM_DETECT_TIME_  5000//  us  
 #define _ASK_TOLERANCE_                 40  //  %
 
 
