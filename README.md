@@ -87,6 +87,6 @@ Arduino example for both frequency:
               delay(100);
           }
       }
-      
+   }     
       
 ```
