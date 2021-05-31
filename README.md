@@ -12,7 +12,7 @@ How to use this Library:
 * fn_init_rx: init rx pin as input and enable pin change interrupt.
 * fn_init_tx: init tx pin as putput.
 * fn_pinchange_callback: pin change callback.
-* fn_micros10: return startup system timer in (micosecond / 10).
+* fn_micros10: return startup system timer in (microsecond / 10).
 * fn_write_pin: write tx pin to 0 and 1.
 * fn_read_pin: read rx pin.
 * fn_delay: delay in miliseconds.
