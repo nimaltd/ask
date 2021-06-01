@@ -11,9 +11,11 @@
  */
 
 /*
- * Version:	3.0.1
+ * Version:	3.0.2
  *
  * History:
+ * 
+ * (3.0.2): Fixed some bugs.
  * 
  * (3.0.1): Fixed some bugs. Changed some functions. Add ask_wait().
  * 

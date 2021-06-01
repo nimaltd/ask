@@ -1,12 +1,12 @@
 
-#include "ask_hal_esp32_arduino.h"
+#include "ask_hal.h"
 
 ask_t   ask433;
 //##################################################################################
 #define RX433_PIN           27
 #define TX433_PIN           25
 //##################################################################################
-void ask_write_pin_433(bool data)
+inline void ask_write_pin_433(bool data)
 {
     digitalWrite(TX433_PIN, data);
 }
@@ -37,12 +37,12 @@ void ask_init_tx433(void)
     pinMode(TX433_PIN, OUTPUT);
 }
 //##################################################################################
-void ask_delay_ms_433(uint32_t delay_ms)
+inline void ask_delay_ms_433(uint32_t delay_ms)
 {
     delay(delay_ms);
 }
 //##################################################################################
-void  ask_delay_us_433(uint32_t delay_us)
+inline void  ask_delay_us_433(uint32_t delay_us)
 {
     delayMicroseconds(delay_us);
 }
@@ -53,7 +53,7 @@ ask_t   ask315;
 #define RX315_PIN           14
 #define TX315_PIN           26
 //##################################################################################
-void ask_write_pin_315(bool data)
+inline void ask_write_pin_315(bool data)
 {
     digitalWrite(TX315_PIN, data);
 }
@@ -84,12 +84,12 @@ void ask_init_tx315(void)
     pinMode(TX315_PIN, OUTPUT);
 }
 //##################################################################################
-void ask_delay_ms_315(uint32_t delay_ms)
+inline void ask_delay_ms_315(uint32_t delay_ms)
 {
     delay(delay_ms);
 }
 //##################################################################################
-void  ask_delay_us_315(uint32_t delay_us)
+inline void  ask_delay_us_315(uint32_t delay_us)
 {
     delayMicroseconds(delay_us);
 }

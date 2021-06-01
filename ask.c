@@ -31,9 +31,9 @@ void ask_pinchange_callback(ask_t *ask)
 {
     if (!ask->enable_rx)
         return;
-    if (ask->detect_end == false)
+    if (!ask->detect_end)
     {
-        if (ask->detect_begin == false)
+        if (!ask->detect_begin)
         {
             if ((ask->fn_micros() - ask->time > _ASK_MIN_NEW_FRAM_DETECT_TIME_) && ask->fn_read_pin())
             {
@@ -50,10 +50,9 @@ void ask_pinchange_callback(ask_t *ask)
             else
             {
                 ask->buffer[ask->index] = ask->fn_micros() - ask->time;
-                if (ask->index < sizeof(ask->buffer) - 1)
+                if (ask->index < (_ASK_MAX_BYTE_LEN_ * 16 + 1))
                     ask->index++;
-            }
-            
+            }            
         }
     }
     ask->time = ask->fn_micros();
