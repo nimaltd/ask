@@ -7,6 +7,10 @@
 
 This is the ASK RF remote decoder for ALL platform Library  
 
+## Platform Ported:
+[x] STM32 HAL
+[x] ESP32 Arduino
+
 How to use this Library:
 * You have to port your platrform's function to library.
 * fn_init_rx: init rx pin as input and enable pin change interrupt.
