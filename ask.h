@@ -60,16 +60,16 @@ typedef struct
 
 }ask_t;
 
-bool            ask_init(ask_t *ask);
-void            ask_pinchange_callback(ask_t *ask);
-bool            ask_available(ask_t *ask);
-void            ask_wait(ask_t *ask);
-void            ask_reset_available(ask_t *ask);
-uint8_t         ask_read_bytes(ask_t *ask, uint8_t *data);
-uint16_t        ask_read_time_of_bit(ask_t *ask);
-void            ask_send_bytes(ask_t *ask, uint8_t *data, uint8_t len, uint32_t bit_time_micros, uint8_t try_to_send);
-int16_t         ask_checkChannelLast4Bit(uint8_t *newCode, uint8_t *refrence, uint8_t len);
-int16_t         ask_checkChannelLast8Bit(uint8_t *newCode, uint8_t *refrence, uint8_t len);
+bool            ask_init(ask_t *ask);   //  init ask structure
+void            ask_pinchange_callback(ask_t *ask); //  external pin change callback
+bool            ask_available(ask_t *ask);  //  return true if data is available
+void            ask_wait(ask_t *ask);   //  Wait for the key release and reset available
+void            ask_reset_available(ask_t *ask);    //  reset data and ready for next data
+uint8_t         ask_read_bytes(ask_t *ask, uint8_t *data);  //  read data
+uint16_t        ask_read_time_of_bit(ask_t *ask);   //  return readed data bit time in microseconds
+void            ask_send_bytes(ask_t *ask, uint8_t *data, uint8_t len, uint32_t bit_time_micros, uint8_t try_to_send); // send data
+int16_t         ask_checkChannelLast4Bit(uint8_t *newCode, uint8_t *refrence, uint8_t len); //  compare and return channel, return -1 if failed  
+int16_t         ask_checkChannelLast8Bit(uint8_t *newCode, uint8_t *refrence, uint8_t len); //  compare and return channel, return -1 if failed  
 
 #ifdef __cplusplus
 }
