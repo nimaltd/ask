@@ -8,8 +8,10 @@
 This is the ASK RF remote decoder for ALL platform Library  
 
 ## Platforms Ported:
-[x] STM32 HAL  
-[x] ESP32 Arduino  
+* [x] STM32 HAL  
+* [x] ESP32 Arduino 
+* [ ] ESP8266 Arduino
+* [ ] AVR Arduino  
 
 How to use this Library:
 * You have to port your platrform's function to library.
