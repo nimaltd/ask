@@ -12,6 +12,7 @@ This is the ASK RF remote decoder for ALL platform Library
 * [x] ESP32 Arduino 
 * [ ] ESP8266 Arduino
 * [ ] AVR Arduino  
+* [ ] PIC
 
 How to use this Library:
 * You have to port your platrform's function to library.
