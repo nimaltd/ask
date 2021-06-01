@@ -1,4 +1,4 @@
-# All mcu and platform Remote decoder (EV1527,PT2262,PT2264 and ...)
+# All mcu and platform Remote Receiver/Sender (EV1527,PT2262,PT2264,...)
 
  *	WebSite:    https://www.github.com/NimaLTD
  *	Instagram:  https://www.instagram.com/github.NimaLTD
