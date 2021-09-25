@@ -5,7 +5,6 @@
  extern "C" {
 #endif
 #include <stdint.h>
-#include <arduino.h>
 #include "ask.h"
 
 extern      ask_t ask433;
