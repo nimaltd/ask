@@ -70,6 +70,7 @@ uint16_t        ask_read_time_of_bit(ask_t *ask);   //  return readed data bit t
 void            ask_send_bytes(ask_t *ask, uint8_t *data, uint8_t len, uint32_t bit_time_micros, uint8_t try_to_send); // send data
 int16_t         ask_checkChannelLast4Bit(uint8_t *newCode, uint8_t *refrence, uint8_t len); //  compare and return channel, return -1 if failed  
 int16_t         ask_checkChannelLast8Bit(uint8_t *newCode, uint8_t *refrence, uint8_t len); //  compare and return channel, return -1 if failed  
+uint32_t        ask_get_DECval(ask_t *ask); //  Return received 24-bit value
 
 #ifdef __cplusplus
 }
