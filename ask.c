@@ -242,3 +242,14 @@ int16_t ask_checkChannelLast8Bit(uint8_t *newCode, uint8_t *refrence, uint8_t le
   return newCode[len - 1];
 }
 //################################################################################################################
+uint32_t ask_get_DECval(ask_t *ask) {
+	uint32_t Data[3] = { 0 };
+	uint8_t data[3] = { 0 };
+	ask_read_bytes(ask, data);
+
+	Data[0] = data[0];
+	Data[1] = data[1];
+	Data[2] = data[2];
+	return ((Data[0] << 16) | (Data[1] << 8) | Data[2]);
+}
+//################################################################################################################
